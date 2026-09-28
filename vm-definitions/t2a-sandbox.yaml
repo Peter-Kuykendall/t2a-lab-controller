@@ -1,0 +1,22 @@
+name: t2a-sandbox
+
+purpose:
+  - lab-validation
+
+hardware:
+  cpu:
+    cores: 2
+  memory:
+    mb: 2048
+
+storage:
+  disks:
+    - name: system
+      pool: default
+      format: qcow2
+      thin: true
+      discard: unmap
+      virtual_size_gb: 30
+
+network:
+  libvirt_network: default
