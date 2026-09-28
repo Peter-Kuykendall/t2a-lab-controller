@@ -2,8 +2,57 @@
 
 Infrastructure automation for the Tech To All development lab.
 
-Goals:
+## Goals
+
 - deterministic VM lifecycle management
 - auditable operations
 - safe automation
+- declarative VM definitions
 - future MCP integration
+
+## Design principles
+
+The controller manages **intent, not procedures**. VM definitions describe the desired operational state; small tools inspect reality, plan changes, and apply them through libvirt.
+
+The project follows a UNIX-style model: small programs should do specific jobs well and be composable rather than growing into one large script.
+
+## Safety model
+
+The planned workflow separates observation from modification:
+
+1. `t2a-vm inspect NAME` — report actual state
+2. `t2a-vm plan NAME` — compare desired state with actual state
+3. `t2a-vm apply NAME` — perform an approved plan
+
+Read-only inspection and planning come before mutation. Destructive actions will be guarded explicitly.
+
+## Desired state
+
+Declarative VM definitions live in `vm-definitions/`.
+
+The first adopted VM is `t2a-sandbox`, an existing libvirt VM used to validate the controller against a known-good resource.
+
+Current observed baseline:
+
+- 2 vCPUs
+- 2048 MB RAM
+- 30 GiB qcow2 disk
+- thin-provisioned storage in libvirt pool `default`
+- libvirt network `default`
+
+## Repository layout
+
+```text
+bin/             user-facing commands
+config/          controller configuration
+lib/             small reusable controller functions
+logs/            local controller logs
+vm-definitions/  declarative desired-state files
+docs/            architecture and design documentation
+```
+
+## Current status
+
+The repository has a working read-only `t2a-vm list` command and a declarative definition for `t2a-sandbox`.
+
+Next planned milestone: implement read-only `inspect` and `plan` commands and prove that the desired definition of `t2a-sandbox` matches its actual libvirt state before adding VM creation.
