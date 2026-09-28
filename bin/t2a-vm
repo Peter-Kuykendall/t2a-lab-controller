@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "$SCRIPT_DIR/../lib/logging.sh"
+source "$SCRIPT_DIR/../lib/libvirt.sh"
+
+case "${1:-}" in
+
+    list)
+        log_action "LIST_VM"
+        list_vms
+        ;;
+
+    *)
+        echo "Usage:"
+        echo "  t2a-vm list"
+        exit 1
+        ;;
+
+esac
