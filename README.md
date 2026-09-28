@@ -2,6 +2,8 @@
 
 Infrastructure automation for the Tech To All development lab.
 
+Host baseline: Ubuntu 24.04-based system with 16 GiB RAM, approximately 256 GB physical storage, and libvirt/QEMU virtualization.
+
 ## Goals
 
 - deterministic VM lifecycle management
