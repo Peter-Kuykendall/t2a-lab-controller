@@ -112,7 +112,10 @@ The first reconciliation test should report no differences. This allows the cont
 - Post-create verification must match declared state.
 - Existing-VM configuration reconciliation is intentionally disabled; a drifted existing VM is reported but not changed.
 - Narrow operational mutations are separate commands: installation-media preparation, power control, and snapshots.
-- Normal shutdown never escalates automatically to a force-stop; `force-stop` is a separate command with explicit `--yes`.
+- Normal shutdown allows up to 120 seconds for a graceful guest power-off and never escalates automatically to a force-stop; `force-stop` is a separate command with explicit `--yes`.
+- Every mutating controller operation takes an exclusive per-VM lock; overlapping mutation attempts fail without changing the VM.
+- Mutating operations also require the current controller-session capability. `session-new` rotates that capability so stale remote shells lose mutation authority while read-only inspection remains available.
+- Framebuffer capture is read-only with respect to the VM and provides image evidence for semantic boot-state inspection.
 
 ## Lab VM roles
 
@@ -125,6 +128,8 @@ Both were created through `t2a-vm apply NAME --yes` and immediately reconciled t
 
 `T2A-Builder` has since completed the installation-media/boot validation cycle using the Linux Mint 22.3 MATE ISO. The validation used a pre-change snapshot, attached the ISO, changed boot order to CD-ROM then disk, started the VM, confirmed a SPICE display and graphical framebuffer, then reverted the snapshot. Revert restored the original disk-only configuration and hard-disk boot order.
 
+The Builder has also completed a full Linux Mint 22.3 MATE OEM installation. The installed OEM environment boots to the temporary technician account and exposes `Prepare for shipping to end user`, proving that configuration and lab testing can occur before the recipient creates a permanent account. The known-good recovery point is `oem-installed-baseline-20260928`.
+
 ## Near-term roadmap
 
 1. Keep `t2a-vm list`, `inspect`, and `plan` as read-only commands.
@@ -134,5 +139,6 @@ Both were created through `t2a-vm apply NAME --yes` and immediately reconciled t
 5. Add guarded creation-only `apply`. **Completed.**
 6. Validate ISO attachment, graphical console path, boot, snapshots, and rollback. **Completed.**
 7. Define policy for any future declarative existing-VM configuration modification before implementing it.
-8. Validate installation workflow inside `T2A-Builder` and deployment/regression workflow inside `T2A-Deploy-Test`.
-9. Expose stable controller operations through MCP.
+8. Validate OEM installation workflow inside `T2A-Builder`. **Completed.**
+9. Validate deployment/regression workflow inside `T2A-Deploy-Test`.
+10. Expose stable controller operations through MCP.

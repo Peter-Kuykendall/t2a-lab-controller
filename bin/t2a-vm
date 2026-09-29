@@ -34,6 +34,51 @@ require_yes() {
     fi
 }
 
+acquire_vm_lock() {
+    local name="$1"
+    local lock_root="${XDG_RUNTIME_DIR:-/tmp}/t2a-lab-controller-locks"
+    local safe_name="${name//[^A-Za-z0-9_.-]/_}"
+
+    mkdir -p "$lock_root"
+    exec 9>"$lock_root/$safe_name.lock"
+    if ! flock -n 9; then
+        echo "ERROR: another controller operation is already active for $name" >&2
+        exit 3
+    fi
+}
+
+require_controller_session() {
+    local session_file="${XDG_RUNTIME_DIR:-/tmp}/t2a-lab-controller-session"
+    local expected
+
+    if [ ! -r "$session_file" ]; then
+        echo "ERROR: no active controller mutation session" >&2
+        exit 4
+    fi
+    expected="$(cat "$session_file")"
+    if [ -z "${T2A_CONTROLLER_SESSION:-}" ] || [ "$T2A_CONTROLLER_SESSION" != "$expected" ]; then
+        echo "ERROR: stale or unauthorized controller mutation session" >&2
+        exit 4
+    fi
+}
+
+new_controller_session() {
+    local session_file="${XDG_RUNTIME_DIR:-/tmp}/t2a-lab-controller-session"
+    local session_dir token tmp
+
+    session_dir="$(dirname "$session_file")"
+    mkdir -p "$session_dir"
+    token="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+    tmp="$session_file.$$"
+
+    umask 077
+    printf '%s\n' "$token" > "$tmp"
+    chmod 600 "$tmp"
+    mv -f "$tmp" "$session_file"
+
+    printf "export T2A_CONTROLLER_SESSION='%s'\n" "$token"
+}
+
 definition_for() {
     local name="$1"
     local definition="$REPO_ROOT/vm-definitions/$name.yaml"
@@ -45,6 +90,11 @@ definition_for() {
 }
 
 case "${1:-}" in
+
+    session-new)
+        log_action "SESSION_NEW"
+        new_controller_session
+        ;;
 
     list)
         log_action "LIST_VM"
@@ -84,6 +134,8 @@ case "${1:-}" in
             [ "$plan_rc" -eq 1 ] && exit 1
             exit 2
         fi
+        require_controller_session
+        acquire_vm_lock "$name"
         log_action "APPLY_VM $name"
         apply_vm "$name" "$definition"
         ;;
@@ -94,6 +146,8 @@ case "${1:-}" in
         require_allowed_vm "$name"
         require_yes "$confirm" "t2a-vm prepare-install NAME --yes"
         definition="$(definition_for "$name")"
+        require_controller_session
+        acquire_vm_lock "$name"
         log_action "PREPARE_INSTALL $name"
         prepare_install_vm "$name" "$definition"
         ;;
@@ -104,6 +158,8 @@ case "${1:-}" in
         [ -n "$name" ] || { echo "Usage: t2a-vm start NAME --yes"; exit 1; }
         require_allowed_vm "$name"
         require_yes "$confirm" "t2a-vm start NAME --yes"
+        require_controller_session
+        acquire_vm_lock "$name"
         log_action "START_VM $name"
         start_vm "$name"
         ;;
@@ -114,6 +170,8 @@ case "${1:-}" in
         [ -n "$name" ] || { echo "Usage: t2a-vm shutdown NAME --yes"; exit 1; }
         require_allowed_vm "$name"
         require_yes "$confirm" "t2a-vm shutdown NAME --yes"
+        require_controller_session
+        acquire_vm_lock "$name"
         log_action "SHUTDOWN_VM $name"
         shutdown_vm "$name"
         ;;
@@ -123,6 +181,8 @@ case "${1:-}" in
         [ -n "$name" ] || { echo "Usage: t2a-vm force-stop NAME --yes"; exit 1; }
         require_allowed_vm "$name"
         require_yes "$confirm" "t2a-vm force-stop NAME --yes"
+        require_controller_session
+        acquire_vm_lock "$name"
         log_action "FORCE_STOP_VM $name"
         force_stop_vm "$name"
         ;;
@@ -135,6 +195,20 @@ case "${1:-}" in
         snapshot_list_vm "$name"
         ;;
 
+    capture-screen)
+        name="${2:-}"
+        label="${3:-}"
+        [ -n "$name" ] && [ -n "$label" ] || {
+            echo "Usage: t2a-vm capture-screen NAME LABEL"
+            exit 1
+        }
+        require_allowed_vm "$name"
+        safe_label="${label//[^A-Za-z0-9_.-]/_}"
+        output="$REPO_ROOT/logs/validation/$name-$safe_label.png"
+        log_action "CAPTURE_SCREEN $name $safe_label"
+        capture_screen_vm "$name" "$output"
+        ;;
+
     snapshot-create)
         name="${2:-}"
         snapshot="${3:-}"
@@ -145,6 +219,8 @@ case "${1:-}" in
         }
         require_allowed_vm "$name"
         require_yes "$confirm" "t2a-vm snapshot-create NAME SNAPSHOT --yes"
+        require_controller_session
+        acquire_vm_lock "$name"
         log_action "SNAPSHOT_CREATE $name $snapshot"
         snapshot_create_vm "$name" "$snapshot"
         ;;
@@ -159,11 +235,14 @@ case "${1:-}" in
         }
         require_allowed_vm "$name"
         require_yes "$confirm" "t2a-vm snapshot-revert NAME SNAPSHOT --yes"
+        require_controller_session
+        acquire_vm_lock "$name"
         log_action "SNAPSHOT_REVERT $name $snapshot"
         snapshot_revert_vm "$name" "$snapshot"
         ;;
     *)
         echo "Usage:"
+        echo "  eval \"$(t2a-vm session-new)\""
         echo "  t2a-vm list"
         echo "  t2a-vm inspect NAME"
         echo "  t2a-vm plan NAME"
@@ -173,6 +252,7 @@ case "${1:-}" in
         echo "  t2a-vm shutdown NAME --yes"
         echo "  t2a-vm force-stop NAME --yes"
         echo "  t2a-vm snapshot-list NAME"
+        echo "  t2a-vm capture-screen NAME LABEL"
         echo "  t2a-vm snapshot-create NAME SNAPSHOT --yes"
         echo "  t2a-vm snapshot-revert NAME SNAPSHOT --yes"
         exit 1

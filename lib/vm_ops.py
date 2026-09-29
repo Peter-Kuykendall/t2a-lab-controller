@@ -211,6 +211,23 @@ def snapshot_revert(name, snapshot):
     return 0
 
 
+def capture_screen(name, output):
+    current = state(name)
+    if current != "running":
+        raise RuntimeError(
+            f"VM {name!r} must be running to capture a screen; state is {current!r}"
+        )
+
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    run("virsh", "screenshot", name, str(output_path))
+    if not output_path.is_file() or output_path.stat().st_size == 0:
+        raise RuntimeError("Screenshot command returned without a usable image")
+
+    print(f"Captured {name} screen: {output_path}")
+    return 0
+
+
 def snapshot_list(name):
     print(run("virsh", "snapshot-list", name).rstrip())
     return 0
@@ -227,7 +244,7 @@ def main():
 
     p_stop = sub.add_parser("shutdown")
     p_stop.add_argument("name")
-    p_stop.add_argument("--timeout", type=int, default=60)
+    p_stop.add_argument("--timeout", type=int, default=120)
 
     p_force = sub.add_parser("force-stop")
     p_force.add_argument("name")
@@ -242,6 +259,10 @@ def main():
 
     p_sl = sub.add_parser("snapshot-list")
     p_sl.add_argument("name")
+
+    p_cap = sub.add_parser("capture-screen")
+    p_cap.add_argument("name")
+    p_cap.add_argument("output")
 
     args = parser.parse_args()
     try:
@@ -261,6 +282,8 @@ def main():
             return snapshot_revert(args.name, args.snapshot)
         if args.command == "snapshot-list":
             return snapshot_list(args.name)
+        if args.command == "capture-screen":
+            return capture_screen(args.name, args.output)
         raise ValueError(f"Unknown command: {args.command}")
     except (RuntimeError, OSError, KeyError, TypeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

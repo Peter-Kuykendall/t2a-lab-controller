@@ -51,3 +51,7 @@ snapshot_revert_vm() {
 snapshot_list_vm() {
     python3 "$VM_OPS_TOOL" snapshot-list "$1"
 }
+
+capture_screen_vm() {
+    python3 "$VM_OPS_TOOL" capture-screen "$1" "$2"
+}
