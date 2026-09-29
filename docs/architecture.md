@@ -118,11 +118,9 @@ Exact definitions will be added only after the inspect/plan path is validated.
 
 ## Near-term roadmap
 
-1. Keep `t2a-vm list` as the first read-only command.
-2. Add `t2a-vm inspect NAME`.
-3. Add `t2a-vm plan NAME`.
-4. Reconcile `t2a-sandbox` and confirm a no-change plan.
-5. Add declarative definitions for Builder and Deploy-Test.
-6. Add `apply` only after planning is trustworthy.
-7. Add snapshot/rollback operations.
-8. Expose stable controller operations through MCP.
+1. Keep `t2a-vm list`, `inspect`, and `plan` as read-only commands.
+2. Reconcile `t2a-sandbox` and confirm a no-change plan. **Completed.**
+3. Add declarative definitions for Builder and Deploy-Test.
+4. Add `apply` only after planning is trustworthy.
+5. Add snapshot/rollback operations.
+6. Expose stable controller operations through MCP.

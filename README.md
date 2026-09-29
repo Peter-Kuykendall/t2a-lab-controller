@@ -55,6 +55,6 @@ docs/            architecture and design documentation
 
 ## Current status
 
-The repository has a working read-only `t2a-vm list` command and a declarative definition for `t2a-sandbox`.
+The repository has working read-only `list`, `inspect`, and `plan` commands plus a declarative definition for `t2a-sandbox`.
 
-Next planned milestone: implement read-only `inspect` and `plan` commands and prove that the desired definition of `t2a-sandbox` matches its actual libvirt state before adding VM creation.
+The first reconciliation test is successful: `t2a-vm plan t2a-sandbox` reports `No changes required.` against the existing VM. The next milestone is to add declarative definitions for the Builder and Deploy-Test VMs before any creation/apply logic is enabled.

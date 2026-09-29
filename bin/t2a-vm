@@ -3,6 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 source "$SCRIPT_DIR/../lib/logging.sh"
 source "$SCRIPT_DIR/../lib/libvirt.sh"
@@ -14,9 +15,36 @@ case "${1:-}" in
         list_vms
         ;;
 
+    inspect)
+        name="${2:-}"
+        if [ -z "$name" ]; then
+            echo "Usage: t2a-vm inspect NAME"
+            exit 1
+        fi
+        log_action "INSPECT_VM $name"
+        inspect_vm "$name"
+        ;;
+
+    plan)
+        name="${2:-}"
+        if [ -z "$name" ]; then
+            echo "Usage: t2a-vm plan NAME"
+            exit 1
+        fi
+        definition="$REPO_ROOT/vm-definitions/$name.yaml"
+        if [ ! -r "$definition" ]; then
+            echo "ERROR: VM definition not found: $definition" >&2
+            exit 1
+        fi
+        log_action "PLAN_VM $name"
+        plan_vm "$name" "$definition"
+        ;;
+
     *)
         echo "Usage:"
         echo "  t2a-vm list"
+        echo "  t2a-vm inspect NAME"
+        echo "  t2a-vm plan NAME"
         exit 1
         ;;
 
