@@ -164,3 +164,12 @@ The official Clonezilla 3.3.3-15 amd64 ZIP was downloaded and extracted locally.
 The remaining blocker is limited to three T2A-specific approved reference files: `t2a-revl.sh`, `go.sh`, and the provisioning private SSH key. Once those are copied from the known-good T2A reference tree, the next step is a dry-run of the production J -> M upgrader against the virtual USB overlay.
 
 See `docs/virtual-provisioning-stick.md` for the complete workflow and safety rules.
+
+### Successful J -> M dry-run
+
+`T2A-Stick-Builder`, a temporary Ubuntu cloud helper VM, was used to run the real production migration engine against the J-backed qcow2 USB overlay. Guest inspection confirmed `TRAN=usb`.
+
+The final dry-run exited 0. It verified `J_LAYOUT_32G`, Clonezilla 2.6.7-28-i686, golden-image presence, the modern Clonezilla 3.3.3-15 reference, clean Rev M repo state, and the known Rev M code fixes. The target partitions were mounted read-only and cleanup left no `/dev/sda*` mounts or `/tmp/t2a-j2m.*` directories.
+
+The apply phase remains intentionally unstarted pending the next explicit step.
+

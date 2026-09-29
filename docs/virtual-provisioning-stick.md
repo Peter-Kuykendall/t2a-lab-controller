@@ -93,3 +93,14 @@ Semantic screen inspection is the preferred boot-state check. It can classify ex
 The provisioning-side details, exact J geometry, and reference hashes are documented in:
 
 `t2a-provisioning/docs/rev-m-virtual-stick-lab.md`
+
+## Dry-run result
+
+A temporary Ubuntu 24.04 cloud helper VM named `T2A-Stick-Builder` was created specifically to exercise the production migration engine without weakening its checks. The J-backed qcow2 overlay appeared inside the guest as `/dev/sda`, model `QEMU HARDDISK`, with `ID_BUS=usb` and `TRAN=usb`.
+
+The production J -> M dry-run completed successfully with exit code 0 after two migration-engine defects were found and corrected: explicit modern-reference path options were accepted by the fleet wrapper but not by the engine, and temporary mount state created inside command substitutions was not visible to the parent cleanup trap.
+
+The corrected dry-run recognized the exact 32 GiB J layout, verified the J Clonezilla runtime and golden-image presence, verified the Rev M reference tree and repo state, mounted target filesystems read-only, and removed every temporary mount/directory at exit.
+
+No `--apply` operation has been performed.
+
