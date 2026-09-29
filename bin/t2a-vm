@@ -7,6 +7,15 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 source "$SCRIPT_DIR/../lib/logging.sh"
 source "$SCRIPT_DIR/../lib/libvirt.sh"
+source "$REPO_ROOT/config/lab.conf"
+
+is_allowed_vm() {
+    local want="$1" vm
+    for vm in $ALLOWED_VMS; do
+        [ "$vm" = "$want" ] && return 0
+    done
+    return 1
+}
 
 case "${1:-}" in
 
@@ -14,7 +23,6 @@ case "${1:-}" in
         log_action "LIST_VM"
         list_vms
         ;;
-
     inspect)
         name="${2:-}"
         if [ -z "$name" ]; then
@@ -39,12 +47,45 @@ case "${1:-}" in
         log_action "PLAN_VM $name"
         plan_vm "$name" "$definition"
         ;;
+    apply)
+        name="${2:-}"
+        confirm="${3:-}"
+        if [ -z "$name" ]; then
+            echo "Usage: t2a-vm apply NAME --yes"
+            exit 1
+        fi
+        if ! is_allowed_vm "$name"; then
+            echo "ERROR: VM is not in ALLOWED_VMS: $name" >&2
+            exit 1
+        fi
+        definition="$REPO_ROOT/vm-definitions/$name.yaml"
+        if [ ! -r "$definition" ]; then
+            echo "ERROR: VM definition not found: $definition" >&2
+            exit 1
+        fi
+        if [ "$confirm" != "--yes" ]; then
+            echo "Refusing to apply without explicit --yes."
+            echo
+            set +e
+            plan_vm "$name" "$definition"
+            plan_rc=$?
+            set -e
+            echo
+            echo "No changes have been applied."
+            echo "To apply this plan: t2a-vm apply $name --yes"
+            [ "$plan_rc" -eq 1 ] && exit 1
+            exit 2
+        fi
+        log_action "APPLY_VM $name"
+        apply_vm "$name" "$definition"
+        ;;
 
     *)
         echo "Usage:"
         echo "  t2a-vm list"
         echo "  t2a-vm inspect NAME"
         echo "  t2a-vm plan NAME"
+        echo "  t2a-vm apply NAME --yes"
         exit 1
         ;;
 

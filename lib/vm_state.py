@@ -127,6 +127,139 @@ def print_create_plan(desired):
     print("  No changes have been applied.")
 
 
+def validate_create_definition(desired):
+    disks = desired.get("storage", {}).get("disks", [])
+    if len(disks) != 1:
+        raise ValueError("Creation currently supports exactly one system disk")
+
+    disk = disks[0]
+    if disk.get("format") != "qcow2":
+        raise ValueError("Creation currently supports qcow2 disks only")
+    if disk.get("thin") is not True:
+        raise ValueError("Creation requires thin: true")
+    if disk.get("discard") != "unmap":
+        raise ValueError("Creation requires discard: unmap")
+
+    cores = int(desired["hardware"]["cpu"]["cores"])
+    memory = int(desired["hardware"]["memory"]["mb"])
+    size = int(disk["virtual_size_gb"])
+    if cores < 1 or memory < 512 or size < 1:
+        raise ValueError("CPU, memory, and disk size must be positive sane values")
+
+    pool = disk["pool"]
+    network = desired["network"]["libvirt_network"]
+    pool_info = run("virsh", "pool-info", pool)
+    if "State:" not in pool_info or "running" not in pool_info:
+        raise RuntimeError(f"Storage pool {pool!r} is not running")
+    net_info = run("virsh", "net-info", network)
+    if "Active:" not in net_info or "yes" not in net_info:
+        raise RuntimeError(f"Network {network!r} is not active")
+
+    return disk
+
+
+def create_vm(desired):
+    validate_create_definition(desired)
+    name = desired["name"]
+    if domain_exists(name):
+        raise RuntimeError(f"VM {name!r} already exists")
+
+    disk = desired["storage"]["disks"][0]
+    pool = disk["pool"]
+    volume = f"{name}.qcow2"
+    size = int(disk["virtual_size_gb"])
+    cores = int(desired["hardware"]["cpu"]["cores"])
+    memory = int(desired["hardware"]["memory"]["mb"])
+    network = desired["network"]["libvirt_network"]
+
+    volume_check = subprocess.run(
+        ("virsh", "vol-info", "--pool", pool, volume),
+        text=True, capture_output=True,
+    )
+    if volume_check.returncode == 0:
+        raise RuntimeError(
+            f"Refusing creation because volume {pool}/{volume} already exists"
+        )
+
+    created_volume = False
+    defined_domain = False
+    xml_path = None
+    try:
+        run(
+            "virsh", "vol-create-as", pool, volume, f"{size}G",
+            "--format", "qcow2", "--allocation", "0",
+        )
+        created_volume = True
+        volume_path = run(
+            "virsh", "vol-path", "--pool", pool, volume
+        ).strip()
+
+        description = ", ".join(desired.get("purpose", []))
+        cmd = [
+            "virt-install", "--print-xml",
+            "--name", name,
+            "--memory", str(memory),
+            "--vcpus", str(cores),
+            "--cpu", "host-passthrough",
+            "--os-variant", "ubuntu24.04",
+            "--import",
+            "--disk",
+            f"path={volume_path},format=qcow2,bus=virtio,discard=unmap",
+            "--network", f"network={network},model=virtio",
+            "--graphics", "spice",
+            "--video", "virtio",
+            "--sound", "ich9",
+            "--controller", "usb3",
+            "--channel", "spicevmc",
+            "--noautoconsole",
+        ]
+        if description:
+            cmd.extend(["--description", description])
+        xml = run(*cmd)
+
+        import tempfile
+        with tempfile.NamedTemporaryFile(
+            mode="w", prefix=f"{name}-", suffix=".xml", delete=False
+        ) as tmp:
+            tmp.write(xml)
+            xml_path = tmp.name
+
+        run("virsh", "define", xml_path)
+        defined_domain = True
+
+        actual = inspect_vm(name)
+        differences = compare(desired, actual)
+        if differences:
+            detail = "; ".join(
+                f"{label}: observed={observed!r} expected={expected!r}"
+                for label, expected, observed in differences
+            )
+            raise RuntimeError(f"Post-create verification failed: {detail}")
+
+        print(f"Created VM {name}.")
+        print("Post-create verification: desired state matches actual state.")
+        print("VM remains shut off.")
+        return 0
+    except Exception:
+        if defined_domain:
+            subprocess.run(
+                ("virsh", "undefine", name),
+                text=True, capture_output=True,
+            )
+        if created_volume:
+            subprocess.run(
+                ("virsh", "vol-delete", "--pool", pool, volume),
+                text=True, capture_output=True,
+            )
+        raise
+    finally:
+        if xml_path:
+            try:
+                Path(xml_path).unlink()
+            except OSError:
+                pass
+
+
 def compare(desired, actual):
     disk = desired["storage"]["disks"][0]
     checks = [
@@ -158,6 +291,10 @@ def main():
     p_plan.add_argument("name")
     p_plan.add_argument("definition")
 
+    p_apply = sub.add_parser("apply")
+    p_apply.add_argument("name")
+    p_apply.add_argument("definition")
+
     args = parser.parse_args()
     try:
         if args.command == "inspect":
@@ -170,6 +307,28 @@ def main():
             raise ValueError(
                 f"Definition name {desired.get('name')!r} does not match requested VM {args.name!r}"
             )
+
+        if args.command == "apply":
+            if not domain_exists(args.name):
+                return create_vm(desired)
+
+            actual = inspect_vm(args.name)
+            differences = compare(desired, actual)
+            if not differences:
+                print(f"VM {args.name} already matches desired state; no changes applied.")
+                return 0
+
+            print(
+                "ERROR: Existing-VM modification is intentionally disabled.",
+                file=sys.stderr,
+            )
+            for label, expected, observed in differences:
+                print(
+                    f"  {label}: observed={observed!r} expected={expected!r}",
+                    file=sys.stderr,
+                )
+            print("No changes have been applied.", file=sys.stderr)
+            return 3
 
         if not domain_exists(args.name):
             print_create_plan(desired)

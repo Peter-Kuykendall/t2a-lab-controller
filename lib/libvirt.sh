@@ -16,3 +16,9 @@ plan_vm() {
     local definition="$2"
     python3 "$VM_STATE_TOOL" plan "$name" "$definition"
 }
+
+apply_vm() {
+    local name="$1"
+    local definition="$2"
+    python3 "$VM_STATE_TOOL" apply "$name" "$definition"
+}

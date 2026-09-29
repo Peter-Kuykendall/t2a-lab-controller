@@ -2,7 +2,11 @@
 
 log_action() {
     local message="$1"
-    local logfile="$(dirname "$0")/../logs/t2a-lab-controller.log"
+    local lib_dir
+    local logfile
+
+    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    logfile="$lib_dir/../logs/t2a-lab-controller.log"
 
     mkdir -p "$(dirname "$logfile")"
 

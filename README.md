@@ -24,9 +24,9 @@ The planned workflow separates observation from modification:
 
 1. `t2a-vm inspect NAME` — report actual state
 2. `t2a-vm plan NAME` — compare desired state with actual state
-3. `t2a-vm apply NAME` — perform an approved plan
+3. `t2a-vm apply NAME --yes` — perform an explicitly confirmed creation plan
 
-Read-only inspection and planning come before mutation. Destructive actions will be guarded explicitly.
+Read-only inspection and planning come before mutation. Apply is currently creation-only: it is restricted to names in `ALLOWED_VMS`, requires `--yes`, refuses to reuse a pre-existing storage volume, verifies the created VM against desired state, rolls back a failed creation, and refuses to modify an existing VM that differs from its definition.
 
 ## Desired state
 
@@ -57,4 +57,6 @@ docs/            architecture and design documentation
 
 The repository has working read-only `list`, `inspect`, and `plan` commands plus a declarative definition for `t2a-sandbox`.
 
-The first reconciliation test is successful: `t2a-vm plan t2a-sandbox` reports `No changes required.` against the existing VM. Declarative definitions now also exist for `T2A-Builder` and `T2A-Deploy-Test`; neither VM has been created yet. Read-only planning recognizes each missing VM and reports the proposed creation parameters. Apply logic remains disabled.
+The first reconciliation test is successful: `t2a-vm plan t2a-sandbox` reports `No changes required.` against the existing VM.
+
+`T2A-Builder` and `T2A-Deploy-Test` have now been created through the controller and post-create verification reports no differences from their declarative definitions. Both remain shut off. Existing-VM mutation is still intentionally disabled.

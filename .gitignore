@@ -1,0 +1,6 @@
+# Runtime state
+logs/*.log
+
+# Python runtime artifacts
+__pycache__/
+*.pyc

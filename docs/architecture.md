@@ -104,17 +104,22 @@ The first reconciliation test should report no differences. This allows the cont
 - Keep configuration in declarative files instead of burying parameters in scripts.
 - Prefer small composable tools over monolithic scripts.
 - Log controller actions.
-- Add destructive operations only with explicit guardrails.
 - Keep privileged operations narrow; normal controller work should run as the non-root `tech` user whenever possible.
+- `apply` requires explicit `--yes` confirmation.
+- `apply` is restricted to VM names in `ALLOWED_VMS`.
+- Creation refuses to reuse a pre-existing volume.
+- Failed creation attempts roll back the newly defined domain and newly created volume.
+- Post-create verification must match declared state.
+- Existing-VM mutation is intentionally disabled; a drifted existing VM is reported but not changed.
 
-## Planned VM roles
+## Lab VM roles
 
-Two primary lab VMs are defined but not yet created:
+The two primary lab VMs are now defined and created:
 
-- `T2A-Builder` — builds and configures Linux Mint golden images. Current definition: 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
-- `T2A-Deploy-Test` — validates deployment, restore, boot, snapshot, rollback, and regression behavior. Current definition: 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
+- `T2A-Builder` — builds and configures Linux Mint golden images. Observed state: shut off, 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
+- `T2A-Deploy-Test` — validates deployment, restore, boot, snapshot, rollback, and regression behavior. Observed state: shut off, 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
 
-These conservative defaults fit the current 16 GiB host while leaving substantial memory for the host OS and controller. They can be revised from observed workload needs before VM creation.
+Both were created through `t2a-vm apply NAME --yes` and immediately reconciled to `No changes required.` They have not yet been booted or given installation media.
 
 ## Near-term roadmap
 
@@ -122,6 +127,7 @@ These conservative defaults fit the current 16 GiB host while leaving substantia
 2. Reconcile `t2a-sandbox` and confirm a no-change plan. **Completed.**
 3. Add declarative definitions for Builder and Deploy-Test. **Completed.**
 4. Extend planning to represent a missing VM as a proposed creation without changing anything. **Completed.**
-5. Add `apply` only after creation planning is trustworthy.
-6. Add snapshot/rollback operations.
-7. Expose stable controller operations through MCP.
+5. Add guarded creation-only `apply`. **Completed.**
+6. Validate ISO attachment, console access, boot, snapshots, and rollback.
+7. Define policy for any future existing-VM modification before implementing it.
+8. Expose stable controller operations through MCP.
