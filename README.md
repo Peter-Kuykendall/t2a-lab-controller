@@ -57,4 +57,4 @@ docs/            architecture and design documentation
 
 The repository has working read-only `list`, `inspect`, and `plan` commands plus a declarative definition for `t2a-sandbox`.
 
-The first reconciliation test is successful: `t2a-vm plan t2a-sandbox` reports `No changes required.` against the existing VM. The next milestone is to add declarative definitions for the Builder and Deploy-Test VMs before any creation/apply logic is enabled.
+The first reconciliation test is successful: `t2a-vm plan t2a-sandbox` reports `No changes required.` against the existing VM. Declarative definitions now also exist for `T2A-Builder` and `T2A-Deploy-Test`; neither VM has been created yet. Read-only planning recognizes each missing VM and reports the proposed creation parameters. Apply logic remains disabled.

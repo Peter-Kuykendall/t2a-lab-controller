@@ -109,18 +109,19 @@ The first reconciliation test should report no differences. This allows the cont
 
 ## Planned VM roles
 
-Two primary lab VMs are planned:
+Two primary lab VMs are defined but not yet created:
 
-- `T2A-Builder` — builds and configures Linux Mint golden images.
-- `T2A-Deploy-Test` — validates deployment, restore, boot, snapshot, rollback, and regression behavior.
+- `T2A-Builder` — builds and configures Linux Mint golden images. Current definition: 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
+- `T2A-Deploy-Test` — validates deployment, restore, boot, snapshot, rollback, and regression behavior. Current definition: 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
 
-Exact definitions will be added only after the inspect/plan path is validated.
+These conservative defaults fit the current 16 GiB host while leaving substantial memory for the host OS and controller. They can be revised from observed workload needs before VM creation.
 
 ## Near-term roadmap
 
 1. Keep `t2a-vm list`, `inspect`, and `plan` as read-only commands.
 2. Reconcile `t2a-sandbox` and confirm a no-change plan. **Completed.**
-3. Add declarative definitions for Builder and Deploy-Test.
-4. Add `apply` only after planning is trustworthy.
-5. Add snapshot/rollback operations.
-6. Expose stable controller operations through MCP.
+3. Add declarative definitions for Builder and Deploy-Test. **Completed.**
+4. Extend planning to represent a missing VM as a proposed creation without changing anything. **Completed.**
+5. Add `apply` only after creation planning is trustworthy.
+6. Add snapshot/rollback operations.
+7. Expose stable controller operations through MCP.

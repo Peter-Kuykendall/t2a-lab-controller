@@ -16,6 +16,15 @@ def run(*args):
     return result.stdout
 
 
+def domain_exists(name):
+    result = subprocess.run(
+        ("virsh", "dominfo", name),
+        text=True,
+        capture_output=True,
+    )
+    return result.returncode == 0
+
+
 def domain_xml(name):
     return ET.fromstring(run("virsh", "dumpxml", name))
 
@@ -104,6 +113,20 @@ def load_desired(path):
         return yaml.safe_load(f)
 
 
+def print_create_plan(desired):
+    disk = desired["storage"]["disks"][0]
+    print(f"Plan for {desired['name']}:")
+    print("  CREATE virtual machine")
+    print(f"  vCPUs: {desired['hardware']['cpu']['cores']}")
+    print(f"  Memory: {desired['hardware']['memory']['mb']} MB")
+    print(f"  Disk pool: {disk['pool']}")
+    print(f"  Disk format: {disk['format']}")
+    print(f"  Disk discard: {disk.get('discard', 'none')}")
+    print(f"  Disk virtual size: {disk['virtual_size_gb']} GiB")
+    print(f"  Network: {desired['network']['libvirt_network']}")
+    print("  No changes have been applied.")
+
+
 def compare(desired, actual):
     disk = desired["storage"]["disks"][0]
     checks = [
@@ -137,11 +160,22 @@ def main():
 
     args = parser.parse_args()
     try:
-        actual = inspect_vm(args.name)
         if args.command == "inspect":
+            actual = inspect_vm(args.name)
             print_inspect(actual)
             return 0
+
         desired = load_desired(Path(args.definition))
+        if desired.get("name") != args.name:
+            raise ValueError(
+                f"Definition name {desired.get('name')!r} does not match requested VM {args.name!r}"
+            )
+
+        if not domain_exists(args.name):
+            print_create_plan(desired)
+            return 2
+
+        actual = inspect_vm(args.name)
         differences = compare(desired, actual)
         print(f"Plan for {args.name}:")
         if not differences:
