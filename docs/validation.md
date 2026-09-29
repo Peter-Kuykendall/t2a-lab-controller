@@ -173,3 +173,11 @@ The final dry-run exited 0. It verified `J_LAYOUT_32G`, Clonezilla 2.6.7-28-i686
 
 The apply phase remains intentionally unstarted pending the next explicit step.
 
+
+### End-to-end Rev M provisioning regression
+
+The corrected virtual Rev M media was used to provision `T2A-Deploy-Test` through the complete production sequence. Hardware qualification ran before destructive testing, `badblocks` completed with zero errors, Clonezilla restored the golden image, the Linux partition expanded to the end of the 30 GiB disk, and the ext3 filesystem expanded to exactly fill that partition. The VM then shut down normally and subsequently booted the restored Linux Mint system with the provisioning USB removed.
+
+Direct read-only inspection of the finished target verified a 27.2 GiB ext3 Linux partition ending at the final disk sector, filesystem state clean, and an ext3 block count of 7,131,904 at 4096 bytes/block, exactly matching the partition capacity.
+
+For the current consolidated resume checkpoint, including the 93 L archive and alternate-image workstream, see `../t2a-provisioning/docs/current-lab-resume.md` on the lab host.
