@@ -55,3 +55,7 @@ snapshot_list_vm() {
 capture_screen_vm() {
     python3 "$VM_OPS_TOOL" capture-screen "$1" "$2"
 }
+
+deploy_preflight_vm() {
+    python3 "$VM_OPS_TOOL" deploy-preflight "$1"
+}

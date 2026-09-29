@@ -65,4 +65,6 @@ The first reconciliation test is successful: `t2a-vm plan t2a-sandbox` reports `
 
 Operational lab commands support guarded installation-media preparation, start, clean shutdown, explicit force-stop, offline snapshot create/list/revert, and standardized framebuffer capture. Mutating operations require `--yes`, remain restricted to `ALLOWED_VMS`, and take an exclusive per-VM lock to prevent overlapping mutations.
 
+`T2A-Deploy-Test` also has a read-only `deploy-preflight` check. It verifies the target VM and inventories available boot media before any deployment mutation is attempted.
+
 A mutation session is opened with `eval "$(./bin/t2a-vm session-new)"`. Opening a new session rotates a local capability token, so stale remote shells can still inspect the lab but can no longer change VM state.

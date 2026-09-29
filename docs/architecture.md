@@ -140,5 +140,5 @@ The Builder has also completed a full Linux Mint 22.3 MATE OEM installation. The
 6. Validate ISO attachment, graphical console path, boot, snapshots, and rollback. **Completed.**
 7. Define policy for any future declarative existing-VM configuration modification before implementing it.
 8. Validate OEM installation workflow inside `T2A-Builder`. **Completed.**
-9. Validate deployment/regression workflow inside `T2A-Deploy-Test`.
+9. Validate deployment/regression workflow inside `T2A-Deploy-Test`. **Preflight implemented; waiting for bootable Rev M provisioning media on the lab host.**
 10. Expose stable controller operations through MCP.

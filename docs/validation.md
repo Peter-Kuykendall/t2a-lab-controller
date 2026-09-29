@@ -131,3 +131,23 @@ This protects both against simultaneously overlapping commands and against old r
 ### Standard framebuffer capture
 
 The controller now exposes `t2a-vm capture-screen NAME LABEL`. It writes a labeled PNG under `logs/validation/` without changing guest or VM configuration. These images can be ingested for semantic classification of expected Mint screens or failure states such as GRUB, initramfs, kernel, filesystem, or display-manager errors.
+
+## 2026-09-28 — Deploy-Test preflight
+
+The controller now exposes the read-only command:
+
+`t2a-vm deploy-preflight T2A-Deploy-Test`
+
+The initial preflight verified:
+
+- `T2A-Deploy-Test` is shut off
+- target disk `vda` exists at 30 GiB and is essentially empty/thin
+- boot order is hard disk only
+- no deployment snapshots exist yet
+- no USB storage device is attached to the host
+- the only virtual boot media currently present are Linux Mint ISO copies
+
+The preflight intentionally reports **BLOCKED** because no bootable provisioning USB/disk image is available. Rev M production media uses the three-partition `USB-DATA` / `Live-usb` / `LIVE-UEFI` layout, so the Mint ISO is not treated as an equivalent deployment test source.
+
+A real deployment/regression run therefore waits for either a full bootable Rev M provisioning-stick image on the lab host or a physical Rev M stick connected for controlled passthrough.
+

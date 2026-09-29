@@ -195,6 +195,14 @@ case "${1:-}" in
         snapshot_list_vm "$name"
         ;;
 
+    deploy-preflight)
+        name="${2:-}"
+        [ -n "$name" ] || { echo "Usage: t2a-vm deploy-preflight NAME"; exit 1; }
+        require_allowed_vm "$name"
+        log_action "DEPLOY_PREFLIGHT $name"
+        deploy_preflight_vm "$name"
+        ;;
+
     capture-screen)
         name="${2:-}"
         label="${3:-}"
@@ -252,6 +260,7 @@ case "${1:-}" in
         echo "  t2a-vm shutdown NAME --yes"
         echo "  t2a-vm force-stop NAME --yes"
         echo "  t2a-vm snapshot-list NAME"
+        echo "  t2a-vm deploy-preflight NAME"
         echo "  t2a-vm capture-screen NAME LABEL"
         echo "  t2a-vm snapshot-create NAME SNAPSHOT --yes"
         echo "  t2a-vm snapshot-revert NAME SNAPSHOT --yes"

@@ -231,6 +231,95 @@ def capture_screen(name, output):
 def snapshot_list(name):
     print(run("virsh", "snapshot-list", name).rstrip())
     return 0
+
+
+def deployment_preflight(name):
+    require_shut_off(name)
+
+    xml = ET.fromstring(run("virsh", "dumpxml", name))
+    disk = xml.find("./devices/disk[@device='disk']")
+    if disk is None:
+        raise RuntimeError("No target system disk is defined")
+    target = disk.find("target")
+    source = disk.find("source")
+    target_dev = target.get("dev", "") if target is not None else ""
+    source_path = source.get("file", "") if source is not None else ""
+
+    blkinfo = run("virsh", "domblkinfo", name, target_dev)
+    capacity = ""
+    allocation = ""
+    for line in blkinfo.splitlines():
+        key, _, value = line.partition(":")
+        if key.strip() == "Capacity":
+            capacity = value.strip()
+        elif key.strip() == "Allocation":
+            allocation = value.strip()
+
+    boot = boot_order(xml) or ["firmware/default"]
+    snapshots = run("virsh", "snapshot-list", name, "--name").split()
+
+    candidates = []
+    for pool in run("virsh", "pool-list", "--name").split():
+        listing = run("virsh", "vol-list", pool)
+        for line in listing.splitlines()[2:]:
+            fields = line.split()
+            if not fields:
+                continue
+            volume = fields[0]
+            if volume.lower().endswith((".img", ".iso")):
+                path = run("virsh", "vol-path", "--pool", pool, volume).strip()
+                candidates.append((pool, volume, path))
+
+    usb_disks = []
+    lsblk = run("lsblk", "-dn", "-o", "NAME,TYPE,TRAN,SIZE,MODEL")
+    for line in lsblk.splitlines():
+        fields = line.split(None, 4)
+        if len(fields) >= 4 and fields[1] == "disk" and fields[2] == "usb":
+            usb_disks.append(line.strip())
+
+    provisioning = [
+        item for item in candidates
+        if item[1].lower().endswith(".img")
+    ]
+
+    print(f"Deployment preflight for {name}:")
+    print(f"  VM state: shut off")
+    print(f"  Target disk: {target_dev} -> {source_path}")
+    print(f"  Target capacity: {capacity} bytes")
+    print(f"  Current allocation: {allocation} bytes")
+    print(f"  Boot order: {', '.join(boot)}")
+    print(f"  Snapshots: {', '.join(snapshots) if snapshots else 'none'}")
+
+    print("  Candidate virtual boot media:")
+    if candidates:
+        for pool, volume, path in candidates:
+            print(f"    {pool}/{volume} -> {path}")
+    else:
+        print("    none")
+
+    print("  Host USB storage devices:")
+    if usb_disks:
+        for item in usb_disks:
+            print(f"    {item}")
+    else:
+        print("    none")
+
+    if provisioning:
+        print("READY: at least one disk-image deployment medium is available.")
+        return 0
+
+    print(
+        "BLOCKED: no provisioning USB/disk image is available to boot the "
+        "deployment VM."
+    )
+    print(
+        "Rev M production media uses a three-partition USB layout "
+        "(USB-DATA, Live-usb, LIVE-UEFI), so an ISO alone is not an "
+        "equivalent deployment test."
+    )
+    return 2
+
+
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
@@ -264,6 +353,9 @@ def main():
     p_cap.add_argument("name")
     p_cap.add_argument("output")
 
+    p_dp = sub.add_parser("deploy-preflight")
+    p_dp.add_argument("name")
+
     args = parser.parse_args()
     try:
         if args.command == "prepare-install":
@@ -284,6 +376,8 @@ def main():
             return snapshot_list(args.name)
         if args.command == "capture-screen":
             return capture_screen(args.name, args.output)
+        if args.command == "deploy-preflight":
+            return deployment_preflight(args.name)
         raise ValueError(f"Unknown command: {args.command}")
     except (RuntimeError, OSError, KeyError, TypeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
