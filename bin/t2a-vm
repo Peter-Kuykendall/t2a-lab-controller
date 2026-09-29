@@ -17,52 +17,60 @@ is_allowed_vm() {
     return 1
 }
 
+require_allowed_vm() {
+    local name="$1"
+    if ! is_allowed_vm "$name"; then
+        echo "ERROR: VM is not in ALLOWED_VMS: $name" >&2
+        exit 1
+    fi
+}
+require_yes() {
+    local confirm="$1"
+    local usage="$2"
+    if [ "$confirm" != "--yes" ]; then
+        echo "Refusing mutation without explicit --yes."
+        echo "Usage: $usage"
+        exit 2
+    fi
+}
+
+definition_for() {
+    local name="$1"
+    local definition="$REPO_ROOT/vm-definitions/$name.yaml"
+    if [ ! -r "$definition" ]; then
+        echo "ERROR: VM definition not found: $definition" >&2
+        exit 1
+    fi
+    printf '%s\n' "$definition"
+}
+
 case "${1:-}" in
 
     list)
         log_action "LIST_VM"
         list_vms
         ;;
+
     inspect)
         name="${2:-}"
-        if [ -z "$name" ]; then
-            echo "Usage: t2a-vm inspect NAME"
-            exit 1
-        fi
+        [ -n "$name" ] || { echo "Usage: t2a-vm inspect NAME"; exit 1; }
         log_action "INSPECT_VM $name"
         inspect_vm "$name"
         ;;
-
     plan)
         name="${2:-}"
-        if [ -z "$name" ]; then
-            echo "Usage: t2a-vm plan NAME"
-            exit 1
-        fi
-        definition="$REPO_ROOT/vm-definitions/$name.yaml"
-        if [ ! -r "$definition" ]; then
-            echo "ERROR: VM definition not found: $definition" >&2
-            exit 1
-        fi
+        [ -n "$name" ] || { echo "Usage: t2a-vm plan NAME"; exit 1; }
+        definition="$(definition_for "$name")"
         log_action "PLAN_VM $name"
         plan_vm "$name" "$definition"
         ;;
+
     apply)
         name="${2:-}"
         confirm="${3:-}"
-        if [ -z "$name" ]; then
-            echo "Usage: t2a-vm apply NAME --yes"
-            exit 1
-        fi
-        if ! is_allowed_vm "$name"; then
-            echo "ERROR: VM is not in ALLOWED_VMS: $name" >&2
-            exit 1
-        fi
-        definition="$REPO_ROOT/vm-definitions/$name.yaml"
-        if [ ! -r "$definition" ]; then
-            echo "ERROR: VM definition not found: $definition" >&2
-            exit 1
-        fi
+        [ -n "$name" ] || { echo "Usage: t2a-vm apply NAME --yes"; exit 1; }
+        require_allowed_vm "$name"
+        definition="$(definition_for "$name")"
         if [ "$confirm" != "--yes" ]; then
             echo "Refusing to apply without explicit --yes."
             echo
@@ -79,13 +87,94 @@ case "${1:-}" in
         log_action "APPLY_VM $name"
         apply_vm "$name" "$definition"
         ;;
+    prepare-install)
+        name="${2:-}"
+        confirm="${3:-}"
+        [ -n "$name" ] || { echo "Usage: t2a-vm prepare-install NAME --yes"; exit 1; }
+        require_allowed_vm "$name"
+        require_yes "$confirm" "t2a-vm prepare-install NAME --yes"
+        definition="$(definition_for "$name")"
+        log_action "PREPARE_INSTALL $name"
+        prepare_install_vm "$name" "$definition"
+        ;;
 
+    start)
+        name="${2:-}"
+        confirm="${3:-}"
+        [ -n "$name" ] || { echo "Usage: t2a-vm start NAME --yes"; exit 1; }
+        require_allowed_vm "$name"
+        require_yes "$confirm" "t2a-vm start NAME --yes"
+        log_action "START_VM $name"
+        start_vm "$name"
+        ;;
+
+    shutdown)
+        name="${2:-}"
+        confirm="${3:-}"
+        [ -n "$name" ] || { echo "Usage: t2a-vm shutdown NAME --yes"; exit 1; }
+        require_allowed_vm "$name"
+        require_yes "$confirm" "t2a-vm shutdown NAME --yes"
+        log_action "SHUTDOWN_VM $name"
+        shutdown_vm "$name"
+        ;;
+    force-stop)
+        name="${2:-}"
+        confirm="${3:-}"
+        [ -n "$name" ] || { echo "Usage: t2a-vm force-stop NAME --yes"; exit 1; }
+        require_allowed_vm "$name"
+        require_yes "$confirm" "t2a-vm force-stop NAME --yes"
+        log_action "FORCE_STOP_VM $name"
+        force_stop_vm "$name"
+        ;;
+
+    snapshot-list)
+        name="${2:-}"
+        [ -n "$name" ] || { echo "Usage: t2a-vm snapshot-list NAME"; exit 1; }
+        require_allowed_vm "$name"
+        log_action "SNAPSHOT_LIST $name"
+        snapshot_list_vm "$name"
+        ;;
+
+    snapshot-create)
+        name="${2:-}"
+        snapshot="${3:-}"
+        confirm="${4:-}"
+        [ -n "$name" ] && [ -n "$snapshot" ] || {
+            echo "Usage: t2a-vm snapshot-create NAME SNAPSHOT --yes"
+            exit 1
+        }
+        require_allowed_vm "$name"
+        require_yes "$confirm" "t2a-vm snapshot-create NAME SNAPSHOT --yes"
+        log_action "SNAPSHOT_CREATE $name $snapshot"
+        snapshot_create_vm "$name" "$snapshot"
+        ;;
+
+    snapshot-revert)
+        name="${2:-}"
+        snapshot="${3:-}"
+        confirm="${4:-}"
+        [ -n "$name" ] && [ -n "$snapshot" ] || {
+            echo "Usage: t2a-vm snapshot-revert NAME SNAPSHOT --yes"
+            exit 1
+        }
+        require_allowed_vm "$name"
+        require_yes "$confirm" "t2a-vm snapshot-revert NAME SNAPSHOT --yes"
+        log_action "SNAPSHOT_REVERT $name $snapshot"
+        snapshot_revert_vm "$name" "$snapshot"
+        ;;
     *)
         echo "Usage:"
         echo "  t2a-vm list"
         echo "  t2a-vm inspect NAME"
         echo "  t2a-vm plan NAME"
         echo "  t2a-vm apply NAME --yes"
+        echo "  t2a-vm prepare-install NAME --yes"
+        echo "  t2a-vm start NAME --yes"
+        echo "  t2a-vm shutdown NAME --yes"
+        echo "  t2a-vm force-stop NAME --yes"
+        echo "  t2a-vm snapshot-list NAME"
+        echo "  t2a-vm snapshot-create NAME SNAPSHOT --yes"
+        echo "  t2a-vm snapshot-revert NAME SNAPSHOT --yes"
         exit 1
         ;;
 

@@ -4,3 +4,4 @@ logs/*.log
 # Python runtime artifacts
 __pycache__/
 *.pyc
+logs/validation/

@@ -21,3 +21,13 @@ storage:
 
 network:
   libvirt_network: default
+
+installation:
+  media:
+    pool: iso
+    volume: linuxmint-22.3-mate-64bit.iso
+    sha256: 7609294da613b75eea89bb918292125e9f06418a368136fb190466e15bf8c373
+  boot_order:
+    - cdrom
+    - hd
+

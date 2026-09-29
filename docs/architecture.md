@@ -110,7 +110,9 @@ The first reconciliation test should report no differences. This allows the cont
 - Creation refuses to reuse a pre-existing volume.
 - Failed creation attempts roll back the newly defined domain and newly created volume.
 - Post-create verification must match declared state.
-- Existing-VM mutation is intentionally disabled; a drifted existing VM is reported but not changed.
+- Existing-VM configuration reconciliation is intentionally disabled; a drifted existing VM is reported but not changed.
+- Narrow operational mutations are separate commands: installation-media preparation, power control, and snapshots.
+- Normal shutdown never escalates automatically to a force-stop; `force-stop` is a separate command with explicit `--yes`.
 
 ## Lab VM roles
 
@@ -119,7 +121,9 @@ The two primary lab VMs are now defined and created:
 - `T2A-Builder` — builds and configures Linux Mint golden images. Observed state: shut off, 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
 - `T2A-Deploy-Test` — validates deployment, restore, boot, snapshot, rollback, and regression behavior. Observed state: shut off, 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
 
-Both were created through `t2a-vm apply NAME --yes` and immediately reconciled to `No changes required.` They have not yet been booted or given installation media.
+Both were created through `t2a-vm apply NAME --yes` and immediately reconciled to `No changes required.`
+
+`T2A-Builder` has since completed the installation-media/boot validation cycle using the Linux Mint 22.3 MATE ISO. The validation used a pre-change snapshot, attached the ISO, changed boot order to CD-ROM then disk, started the VM, confirmed a SPICE display and graphical framebuffer, then reverted the snapshot. Revert restored the original disk-only configuration and hard-disk boot order.
 
 ## Near-term roadmap
 
@@ -128,6 +132,7 @@ Both were created through `t2a-vm apply NAME --yes` and immediately reconciled t
 3. Add declarative definitions for Builder and Deploy-Test. **Completed.**
 4. Extend planning to represent a missing VM as a proposed creation without changing anything. **Completed.**
 5. Add guarded creation-only `apply`. **Completed.**
-6. Validate ISO attachment, console access, boot, snapshots, and rollback.
-7. Define policy for any future existing-VM modification before implementing it.
-8. Expose stable controller operations through MCP.
+6. Validate ISO attachment, graphical console path, boot, snapshots, and rollback. **Completed.**
+7. Define policy for any future declarative existing-VM configuration modification before implementing it.
+8. Validate installation workflow inside `T2A-Builder` and deployment/regression workflow inside `T2A-Deploy-Test`.
+9. Expose stable controller operations through MCP.

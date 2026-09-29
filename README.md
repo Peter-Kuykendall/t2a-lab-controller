@@ -59,4 +59,6 @@ The repository has working read-only `list`, `inspect`, and `plan` commands plus
 
 The first reconciliation test is successful: `t2a-vm plan t2a-sandbox` reports `No changes required.` against the existing VM.
 
-`T2A-Builder` and `T2A-Deploy-Test` have now been created through the controller and post-create verification reports no differences from their declarative definitions. Both remain shut off. Existing-VM mutation is still intentionally disabled.
+`T2A-Builder` and `T2A-Deploy-Test` have now been created through the controller and post-create verification reports no differences from their declarative definitions. Both remain shut off. Existing-VM configuration mutation is still intentionally disabled.
+
+Operational lab commands now support guarded installation-media preparation, start, clean shutdown, explicit force-stop, and offline snapshot create/list/revert. Mutating operations require `--yes` and remain restricted to `ALLOWED_VMS`.
