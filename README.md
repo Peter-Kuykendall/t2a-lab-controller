@@ -67,4 +67,6 @@ Operational lab commands support guarded installation-media preparation, start, 
 
 `T2A-Deploy-Test` also has a read-only `deploy-preflight` check. It verifies the target VM and inventories available boot media before any deployment mutation is attempted.
 
+The verified 32 GiB legacy J stick image is now available on the lab host. A qcow2 copy-on-write overlay provides the writable J -> M candidate without modifying the J master. See `docs/virtual-provisioning-stick.md`.
+
 A mutation session is opened with `eval "$(./bin/t2a-vm session-new)"`. Opening a new session rotates a local capability token, so stale remote shells can still inspect the lab but can no longer change VM state.

@@ -151,3 +151,16 @@ The preflight intentionally reports **BLOCKED** because no bootable provisioning
 
 A real deployment/regression run therefore waits for either a full bootable Rev M provisioning-stick image on the lab host or a physical Rev M stick connected for controlled passthrough.
 
+## 2026-09-28 — Virtual J -> M fixture
+
+The verified 32 GiB `J-usb.img` archive is now present on `t2a-lab`; its supplied SHA1 was confirmed before use. Inspection verified the legacy three-partition J layout and the J-era Clonezilla 2.6.7-28-i686 runtime.
+
+A writable M candidate was created as `M-usb.qcow2`, a qcow2 overlay backed by the immutable raw J image. The overlay has a 32 GiB virtual size but initially consumes only a few hundred KiB. Failed migrations can therefore be discarded without recopying or modifying the J master.
+
+A dry libvirt XML generation confirmed that the qcow2 overlay can be attached to a VM with `bus=usb`, allowing the guest to report the provisioning medium as USB storage. This preserves the production upgrader's `TRAN=usb` guard instead of creating a lab-only bypass.
+
+The official Clonezilla 3.3.3-15 amd64 ZIP was downloaded and extracted locally. SHA256 checks of `vmlinuz`, `initrd.img`, and `filesystem.squashfs` exactly matched the known-good hashes embedded in the validated T2A J -> M migration script.
+
+The remaining blocker is limited to three T2A-specific approved reference files: `t2a-revl.sh`, `go.sh`, and the provisioning private SSH key. Once those are copied from the known-good T2A reference tree, the next step is a dry-run of the production J -> M upgrader against the virtual USB overlay.
+
+See `docs/virtual-provisioning-stick.md` for the complete workflow and safety rules.

@@ -140,5 +140,10 @@ The Builder has also completed a full Linux Mint 22.3 MATE OEM installation. The
 6. Validate ISO attachment, graphical console path, boot, snapshots, and rollback. **Completed.**
 7. Define policy for any future declarative existing-VM configuration modification before implementing it.
 8. Validate OEM installation workflow inside `T2A-Builder`. **Completed.**
-9. Validate deployment/regression workflow inside `T2A-Deploy-Test`. **Preflight implemented; waiting for bootable Rev M provisioning media on the lab host.**
+9. Validate deployment/regression workflow inside `T2A-Deploy-Test`. **In progress: verified J source is present, qcow2 M working overlay is created, and the standard Clonezilla Rev M runtime is reconstructed and hash-verified. Waiting only for the approved T2A-specific Rev L reference files before J -> M migration.**
 10. Expose stable controller operations through MCP.
+
+
+## Virtual provisioning-stick fixture
+
+The Deploy-Test lab uses an immutable raw J image plus a qcow2 copy-on-write overlay presented as USB storage. This preserves the production migration engine's USB-transport guard while making J -> M experiments disposable and repeatable. See `docs/virtual-provisioning-stick.md`.
