@@ -121,12 +121,12 @@ The first reconciliation test should report no differences. This allows the cont
 
 The two primary lab VMs are now defined and created:
 
-- `T2A-Builder` — builds and configures Linux Mint golden images. Observed state: shut off, 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
+- `T2A-Image-Builder` — builds and configures Linux Mint golden images. Observed state: shut off, 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
 - `T2A-Deploy-Test` — validates deployment, restore, boot, snapshot, rollback, and regression behavior. Observed state: shut off, 2 vCPUs, 4096 MB RAM, 30 GiB thin qcow2 disk on pool `default`, network `default`.
 
 Both were created through `t2a-vm apply NAME --yes` and immediately reconciled to `No changes required.`
 
-`T2A-Builder` has since completed the installation-media/boot validation cycle using the Linux Mint 22.3 MATE ISO. The validation used a pre-change snapshot, attached the ISO, changed boot order to CD-ROM then disk, started the VM, confirmed a SPICE display and graphical framebuffer, then reverted the snapshot. Revert restored the original disk-only configuration and hard-disk boot order.
+`T2A-Image-Builder` has since completed the installation-media/boot validation cycle using the Linux Mint 22.3 MATE ISO. The validation used a pre-change snapshot, attached the ISO, changed boot order to CD-ROM then disk, started the VM, confirmed a SPICE display and graphical framebuffer, then reverted the snapshot. Revert restored the original disk-only configuration and hard-disk boot order.
 
 The Builder has also completed a full Linux Mint 22.3 MATE OEM installation. The installed OEM environment boots to the temporary technician account and exposes `Prepare for shipping to end user`, proving that configuration and lab testing can occur before the recipient creates a permanent account. The known-good recovery point is `oem-installed-baseline-20260928`.
 
@@ -139,7 +139,7 @@ The Builder has also completed a full Linux Mint 22.3 MATE OEM installation. The
 5. Add guarded creation-only `apply`. **Completed.**
 6. Validate ISO attachment, graphical console path, boot, snapshots, and rollback. **Completed.**
 7. Define policy for any future declarative existing-VM configuration modification before implementing it.
-8. Validate OEM installation workflow inside `T2A-Builder`. **Completed.**
+8. Validate OEM installation workflow inside `T2A-Image-Builder`. **Completed.**
 9. Validate deployment/regression workflow inside `T2A-Deploy-Test`. **In progress: verified J source is present, qcow2 M working overlay is created, and the standard Clonezilla Rev M runtime is reconstructed and hash-verified. Waiting only for the approved T2A-specific Rev L reference files before J -> M migration.**
 10. Expose stable controller operations through MCP.
 

@@ -2,7 +2,7 @@
 
 ## 2026-09-28 — VM operational workflow
 
-The first end-to-end operational validation used `T2A-Builder`.
+The first end-to-end operational validation used `T2A-Image-Builder`.
 
 ### Installation media
 
@@ -10,7 +10,7 @@ The Linux Mint 22.3 MATE ISO is present in both lab ISO pools. The two copies we
 
 `7609294da613b75eea89bb918292125e9f06418a368136fb190466e15bf8c373`
 
-The canonical installation intent for `T2A-Builder` uses the `iso` pool volume:
+The canonical installation intent for `T2A-Image-Builder` uses the `iso` pool volume:
 
 `linuxmint-22.3-mate-64bit.iso`
 
@@ -25,7 +25,7 @@ The VM was shut off when the snapshot was created.
 
 ### Media and boot preparation
 
-`t2a-vm prepare-install T2A-Builder --yes` successfully:
+`t2a-vm prepare-install T2A-Image-Builder --yes` successfully:
 
 - attached the ISO as read-only CD-ROM `sda`
 - set boot order to `cdrom, hd`
@@ -34,7 +34,7 @@ The VM was shut off when the snapshot was created.
 The command is restricted to `ALLOWED_VMS` and requires explicit `--yes`.
 ### Boot and graphical console path
 
-`t2a-vm start T2A-Builder --yes` started the VM and libvirt reported:
+`t2a-vm start T2A-Image-Builder --yes` started the VM and libvirt reported:
 
 `spice://127.0.0.1:5900`
 
@@ -65,7 +65,7 @@ Post-revert verification showed:
 
 - the CD-ROM device was removed
 - boot order returned to hard disk only
-- `t2a-vm plan T2A-Builder` again reported `No changes required.`
+- `t2a-vm plan T2A-Image-Builder` again reported `No changes required.`
 
 This validates offline snapshot creation and configuration rollback in addition to qcow2 disk rollback.
 
@@ -73,7 +73,7 @@ The validation snapshot remains available for now as a known pre-installation re
 
 ## 2026-09-28 — OEM installation workflow
 
-Linux Mint 22.3 MATE was installed successfully in `T2A-Builder` using the ISO's documented GRUB entry:
+Linux Mint 22.3 MATE was installed successfully in `T2A-Image-Builder` using the ISO's documented GRUB entry:
 
 `OEM install (for manufacturers)`
 
@@ -111,7 +111,7 @@ Framebuffer screenshots are now treated as semantic evidence, not merely as pixe
 
 The earlier unique-color count remains useful only as a coarse indication that a display changed.
 
-A standardized capture made with `t2a-vm capture-screen T2A-Builder oem-semantic-validation` was ingested directly and visually classified as the expected installed Linux Mint MATE OEM technician environment rather than a bootloader, emergency shell, or text error state.
+A standardized capture made with `t2a-vm capture-screen T2A-Image-Builder oem-semantic-validation` was ingested directly and visually classified as the expected installed Linux Mint MATE OEM technician environment rather than a bootloader, emergency shell, or text error state.
 
 ### Concurrent-operation guard
 

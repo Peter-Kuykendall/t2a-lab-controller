@@ -59,9 +59,9 @@ The repository has working read-only `list`, `inspect`, and `plan` commands plus
 
 The first reconciliation test is successful: `t2a-vm plan t2a-sandbox` reports `No changes required.` against the existing VM.
 
-`T2A-Builder` and `T2A-Deploy-Test` have now been created through the controller and post-create verification reports no differences from their declarative definitions. Both are currently shut off. Existing-VM configuration mutation is still intentionally disabled.
+`T2A-Image-Builder` and `T2A-Deploy-Test` have now been created through the controller and post-create verification reports no differences from their declarative definitions. Both are currently shut off. Existing-VM configuration mutation is still intentionally disabled.
 
-`T2A-Builder` now has a verified Linux Mint 22.3 MATE OEM installation baseline. OEM mode boots to a temporary technician environment with `Prepare for shipping to end user`, allowing configuration and testing before the recipient creates a permanent account.
+`T2A-Image-Builder` now has a verified Linux Mint 22.3 MATE OEM installation baseline. OEM mode boots to a temporary technician environment with `Prepare for shipping to end user`, allowing configuration and testing before the recipient creates a permanent account.
 
 Operational lab commands support guarded installation-media preparation, start, clean shutdown, explicit force-stop, offline snapshot create/list/revert, and standardized framebuffer capture. Mutating operations require `--yes`, remain restricted to `ALLOWED_VMS`, and take an exclusive per-VM lock to prevent overlapping mutations.
 
